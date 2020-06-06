@@ -6,6 +6,7 @@ public class PlayerController : MonoBehaviour
 {
     //＝＝＝外部パラメータ（Inspector表示）＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
     public float speed = 10.0f;
+    public GameObject comboEffect;
 
     //＝＝＝外部パラメータ＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
     [System.NonSerialized] public float dir = 1.0f;
@@ -52,8 +53,6 @@ public class PlayerController : MonoBehaviour
         groundCheck_L = transform.Find("GroundCheck_L");
         groundCheck_C = transform.Find("GroundCheck_C");
         groundCheck_R = transform.Find("GroundCheck_R");
-
-        Debug.Log(groundCheck_L);
 
         dir = (transform.localScale.x > 0.0f) ? 1.0f : -1.0f;
 
@@ -156,49 +155,85 @@ public class PlayerController : MonoBehaviour
         transform.position += diff * dir;
     }
 
+    public void EnableAttackInput()
+    {
+        atkInputEnabled = true;
+    }
+
+    public void DisableAttackInput()
+    {
+        atkInputEnabled = false;
+    }
+
+    public void SetNextAttack(string stateName)
+    {
+        if(atkInputNow == true)
+        {
+            atkInputNow = false;
+            animator.Play(stateName);
+            ResetPosition();
+        }
+    }
+
     //＝＝＝コード（基本アクション）＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
     public void ActionMove(float n)
     {
-        //アニメーションの指定
-        float moveSpeed = Mathf.Abs(n);
-        animator.SetFloat("MoveSpeed", moveSpeed);
+        AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
 
-        //移動
-        if(n != 0.0f)
+        if(stateInfo.fullPathHash == ANISTS_Idle ||
+            stateInfo.fullPathHash == ANISTS_Walk ||
+            stateInfo.fullPathHash == ANISTS_Run ||
+            stateInfo.fullPathHash == ANISTS_Jump)
         {
-            dir = Mathf.Sign(n);
-            moveSpeed = (moveSpeed < 0.5f) ? (moveSpeed * (1.0f/0.5f)) : 1.0f;
-            speedVx = speed * moveSpeed * dir;
-        }
-        else
-        {
-            speedVx = 0;
+            //アニメーションの指定
+            float moveSpeed = Mathf.Abs(n);
+            animator.SetFloat("MoveSpeed", moveSpeed);
+
+            //移動
+            if(n != 0.0f)
+            {
+                dir = Mathf.Sign(n);
+                moveSpeed = (moveSpeed < 0.5f) ? (moveSpeed * (1.0f/0.5f)) : 1.0f;
+                speedVx = speed * moveSpeed * dir;
+            }
+            else
+            {
+                speedVx = 0;
+            }
         }
     }
 
     public void ActionJump()
     {
-        switch(jumpCount)
+        AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+        
+         if(stateInfo.fullPathHash == ANISTS_Idle ||
+            stateInfo.fullPathHash == ANISTS_Walk ||
+            stateInfo.fullPathHash == ANISTS_Run ||
+            stateInfo.fullPathHash == ANISTS_Jump)
         {
-            case 0:
-            if(grounded)
+            switch(jumpCount)
             {
-                animator.SetTrigger("Jump");
-                rb2D.velocity = Vector2.up * 30.0f;
-                jumped = true;
-                jumpCount++;
-            }
-            break;
+                case 0:
+                if(grounded)
+                {
+                    animator.SetTrigger("Jump");
+                    rb2D.velocity = Vector2.up * 30.0f;
+                    jumped = true;
+                    jumpCount++;
+                }
+                break;
 
-            case 1:
-            if(!grounded)
-            {
-                animator.Play("Player_Jump", 0, 0.0f);
-                rb2D.velocity = Vector2.up * 20.0f;
-                jumped = true;
-                jumpCount++;
+                case 1:
+                if(!grounded)
+                {
+                    animator.Play("Player_Jump", 0, 0.0f);
+                    rb2D.velocity = Vector2.up * 20.0f;
+                    jumped = true;
+                    jumpCount++;
+                }
+                break;
             }
-            break;
         }
     }
 
@@ -206,7 +241,25 @@ public class PlayerController : MonoBehaviour
     {
         AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
 
-        if()
-        animator.SetTrigger("Attack_A");
+        if(stateInfo.fullPathHash == ANISTS_Idle ||
+            stateInfo.fullPathHash == ANISTS_Walk ||
+            stateInfo.fullPathHash == ANISTS_Run /*||
+            stateInfo.fullPathHash == ANISTS_Jump*/)
+        {
+            animator.SetTrigger("Attack_A");
+        }
+        else
+        {
+            if(atkInputEnabled)
+            {
+                atkInputEnabled = false;
+                atkInputNow = true;
+
+                //コンボエフェクト
+                comboEffect.GetComponent<RectTransform>().localScale = new Vector3(dir, 1, 1);
+                comboEffect.SetActive(false);
+                comboEffect.SetActive(true);
+            }
+        }
     }
 }

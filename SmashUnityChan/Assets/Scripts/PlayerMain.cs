@@ -24,6 +24,13 @@ public class PlayerMain : MonoBehaviour
         if(Input.GetButtonDown("Jump"))
         {
             playerCtrl.ActionJump();
-        }                
+            return; //ジャンプ処理直後に攻撃が発生しないようにする
+        }
+
+        //攻撃
+        if(Input.GetButtonDown("Fire1"))
+        {
+            playerCtrl.ActionAttack();
+        }
     }
 }
