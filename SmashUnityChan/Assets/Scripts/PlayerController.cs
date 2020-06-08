@@ -149,8 +149,8 @@ public class PlayerController : MonoBehaviour
         //攻撃中の移動停止
         if(stateInfo.fullPathHash == ANISTS_Attack_A ||
             stateInfo.fullPathHash == ANISTS_Attack_B ||
-            stateInfo.fullPathHash == ANISTS_Attack_C ||
-            stateInfo.fullPathHash == ANISTS_JumpAttack)
+            stateInfo.fullPathHash == ANISTS_Attack_C /*||
+            stateInfo.fullPathHash == ANISTS_JumpAttack*/)
         {
             speedVx = 0;
         }
