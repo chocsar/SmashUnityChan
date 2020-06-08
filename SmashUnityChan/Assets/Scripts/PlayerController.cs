@@ -22,6 +22,7 @@ public class PlayerController : MonoBehaviour
     public static int ANISTS_Attack_A = Animator.StringToHash("Base Layer.Player_Attack_A");
     public static int ANISTS_Attack_B = Animator.StringToHash("Base Layer.Player_Attack_B");
     public static int ANISTS_Attack_C = Animator.StringToHash("Base Layer.Player_Attack_C");
+    public static int ANISTS_JumpAttack = Animator.StringToHash("Base Layer.Player_JumpAttack");
 
     
     //＝＝＝キャッシュ＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
@@ -43,6 +44,10 @@ public class PlayerController : MonoBehaviour
     private bool atkInputEnabled = false; //trueの間、コンボ入力受付
     private bool atkInputNow = false; //コンボ入力が行われたかどうか
 
+    private float gravityScale = 10.0f;
+    private bool addForceEnabled = false;
+    private float addForceStartTime = 0;
+
 
     //＝＝＝コード（Monobehavior基本機能の実装）＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
     private void Awake()
@@ -60,6 +65,8 @@ public class PlayerController : MonoBehaviour
         bodyColliderTransform = transform.Find("Collider_Body");
         initSpritePos = spriteTransform.localPosition;
         initBodyColliderPos = bodyColliderTransform.localPosition;
+
+        gravityScale = rb2D.gravityScale;
     }
 
     void Start()
@@ -100,8 +107,19 @@ public class PlayerController : MonoBehaviour
         //キャラクター個別の処理
         FixedUpdateCharacter();
 
+
         //移動計算
-        rb2D.velocity = new Vector2(speedVx, rb2D.velocity.y);
+        if(addForceEnabled)
+        {
+            if(Time.fixedTime - addForceStartTime > 0.5f)
+            {
+                addForceEnabled = false;
+            }
+        }
+        else
+        {
+            rb2D.velocity = new Vector2(speedVx, rb2D.velocity.y);
+        }
     
     }
 
@@ -118,18 +136,21 @@ public class PlayerController : MonoBehaviour
             {
                 jumped = false;
                 jumpCount = 0;
+                rb2D.gravityScale = gravityScale;
             }
         }
         //地面にいるとき
         else
         {
             jumpCount = 0;
+            rb2D.gravityScale = gravityScale;
         }
 
         //攻撃中の移動停止
         if(stateInfo.fullPathHash == ANISTS_Attack_A ||
             stateInfo.fullPathHash == ANISTS_Attack_B ||
-            stateInfo.fullPathHash == ANISTS_Attack_C)
+            stateInfo.fullPathHash == ANISTS_Attack_C ||
+            stateInfo.fullPathHash == ANISTS_JumpAttack)
         {
             speedVx = 0;
         }
@@ -174,6 +195,23 @@ public class PlayerController : MonoBehaviour
             ResetPosition();
         }
     }
+
+    public void SetLightGravity()
+    {
+        rb2D.velocity = Vector2.zero;
+
+        rb2D.AddForce(new Vector2(300 * dir, 200)); //移動計算を物理演算に任せる必要性
+        addForceEnabled = true;
+        addForceStartTime = Time.fixedTime;
+        
+        rb2D.gravityScale = 2f;
+    }
+
+    public void ResetGravity()
+    {
+        rb2D.gravityScale = gravityScale;
+    }
+
 
     //＝＝＝コード（基本アクション）＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
     public void ActionMove(float n)
@@ -243,8 +281,8 @@ public class PlayerController : MonoBehaviour
 
         if(stateInfo.fullPathHash == ANISTS_Idle ||
             stateInfo.fullPathHash == ANISTS_Walk ||
-            stateInfo.fullPathHash == ANISTS_Run /*||
-            stateInfo.fullPathHash == ANISTS_Jump*/)
+            stateInfo.fullPathHash == ANISTS_Run ||
+            stateInfo.fullPathHash == ANISTS_Jump)
         {
             animator.SetTrigger("Attack_A");
         }
@@ -256,9 +294,9 @@ public class PlayerController : MonoBehaviour
                 atkInputNow = true;
 
                 //コンボエフェクト
-                comboEffect.GetComponent<RectTransform>().localScale = new Vector3(dir, 1, 1);
-                comboEffect.SetActive(false);
-                comboEffect.SetActive(true);
+                GameObject effect = Instantiate(comboEffect, 
+                    transform.position + new Vector3(0, 2, 0) ,Quaternion.identity);
+                Destroy(effect, 2);
             }
         }
     }
