@@ -13,6 +13,7 @@ public class PlayerController : MonoBehaviour
     [System.NonSerialized] public bool jumped = false;
     [System.NonSerialized] public bool grounded = false;
     [System.NonSerialized] public bool groundedPrev = false;
+    [System.NonSerialized] public Vector2 attackNockBackVector = Vector2.zero;
 
     //アニメーションのハッシュ名
     public static int ANISTS_Idle = Animator.StringToHash("Base Layer.Player_Idle");
@@ -109,7 +110,7 @@ public class PlayerController : MonoBehaviour
 
 
         //移動計算
-        if(addForceEnabled)
+        if(addForceEnabled) //AddForceした時 → 一定時間、移動を物理演算に任せる
         {
             if(Time.fixedTime - addForceStartTime > 0.5f)
             {
@@ -157,8 +158,6 @@ public class PlayerController : MonoBehaviour
     
         //キャラの方向
         transform.localScale = new Vector3(dir, transform.localScale.y, transform.localScale.z);
-
-        //ジャンプ中の横移動減速→とりあえず保留
 
         //カメラ
         //Camera.main.transform.position = transform.position + new Vector3(0, 4, -1);
@@ -285,6 +284,15 @@ public class PlayerController : MonoBehaviour
             stateInfo.fullPathHash == ANISTS_Jump)
         {
             animator.SetTrigger("Attack_A");
+
+            if(stateInfo.fullPathHash == ANISTS_Jump)
+            {
+                attackNockBackVector = new Vector2(dir * 1000, 2000);
+            }
+            else
+            {
+                attackNockBackVector = new Vector2(dir * 0, 500);
+            }
         }
         else
         {
@@ -297,6 +305,15 @@ public class PlayerController : MonoBehaviour
                 GameObject effect = Instantiate(comboEffect, 
                     transform.position + new Vector3(0, 2, 0) ,Quaternion.identity);
                 Destroy(effect, 2);
+
+                if(stateInfo.fullPathHash == ANISTS_Attack_A)
+                {
+                    attackNockBackVector = new Vector2(dir * 0, 500);
+                }
+                if(stateInfo.fullPathHash == ANISTS_Attack_B)
+                {
+                    attackNockBackVector = new Vector2(dir * 1000, 2000);
+                }
             }
         }
     }
